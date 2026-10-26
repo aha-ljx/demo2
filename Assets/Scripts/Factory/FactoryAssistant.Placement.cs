@@ -46,8 +46,8 @@ public sealed partial class RawMaterialSupply
         int total = 0;
         for (int i = 0; i < amounts.Length; i++)
         {
-            if (amounts[i] < 0 || amounts[i] > FeedLimit(punches[i]) || !AllowsPlacement(punches[i].Ports.InputPort.position))
-            { error = "上料计划超过冲床容量，或冲床进料口跨越原料边界"; return false; }
+            if (amounts[i] < 0 || amounts[i] > FeedLimit(punches[i]))
+            { error = "上料计划超过冲床容量"; return false; }
             total += amounts[i];
         }
         if (total > Remaining) { error = "原料堆库存不足"; return false; }

@@ -27,9 +27,14 @@ public class EquipmentGrid : MonoBehaviour
         baseObject.name = "GridBasePlate";
         plate = baseObject.transform;
         plate.SetParent(transform, true);
-        plate.position = new Vector3(bounds.center.x, bounds.min.y + 0.025f, bounds.center.z);
+        // Rails may legally overlap a station's decorative floor. Keep their
+        // top faces at distinct heights to avoid coplanar depth flickering.
+        // Both plates still start at the same ground level, preserving Snap
+        // positions, saved layouts and the height of the original hardware.
+        float plateThickness = sourcePlate != null ? 0.02f : 0.05f;
+        plate.position = new Vector3(bounds.center.x, bounds.min.y + plateThickness * 0.5f, bounds.center.z);
         plate.localScale = new Vector3(Cells.x / transform.lossyScale.x,
-            0.05f / transform.lossyScale.y, Cells.y / transform.lossyScale.z);
+            plateThickness / transform.lossyScale.y, Cells.y / transform.lossyScale.z);
         if (sourcePlate != null)
         {
             baseObject.GetComponent<Renderer>().sharedMaterial = sourcePlate.sharedMaterial;

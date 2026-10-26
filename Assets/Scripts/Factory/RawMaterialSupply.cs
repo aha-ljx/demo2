@@ -170,8 +170,6 @@ public sealed partial class RawMaterialSupply : MonoBehaviour
     public bool TryFeed(FactoryStation station, bool birdMode = false)
     {
         if (Held == null || station == null || station.Kind != 0) return false;
-        if (!AllowsPlacement(station.Ports.InputPort.position))
-        { production.Message("原料不能越过黄线；请将冲床进料口移到原料堆所在一侧，并留足整块板材的空间"); return false; }
         if (!birdMode && Vector3.Distance(actorCollider.bounds.center, station.Ports.InputPort.position) > Reach + width)
         { production.Message("请靠近冲床输入口后再放置"); return false; }
         if (!station.CanAccept) { production.Message("冲床队列已满，请稍后再放置"); return false; }
@@ -188,8 +186,6 @@ public sealed partial class RawMaterialSupply : MonoBehaviour
         if (Vector3.Distance(new Vector3(actor.position.x, 0, actor.position.z), point) > Reach + width)
         { production.Message("放置位置太远，请走近后再放置"); return false; }
         Bounds area = new Bounds(point + Vector3.up * 0.03f, new Vector3(width, 0.06f, width));
-        if (!AllowsPlacement(point))
-        { production.Message("原料不能越过黄线，请将整块原料放在原料堆所在一侧"); return false; }
         if (area.Intersects(actorCollider.bounds) || Overlaps(area))
         { production.Message("放置位置被占用，请选择附近空地"); return false; }
         foreach (var item in equipment)
@@ -205,12 +201,6 @@ public sealed partial class RawMaterialSupply : MonoBehaviour
         box.enabled = true; loose.Add(part);
         production.Message("原料板已放下；靠近按 F 可重新拾取");
         Physics.SyncTransforms(); return true;
-    }
-
-    bool AllowsPlacement(Vector3 point)
-    {
-        var layout = production.GetComponent<FactoryLevelLayout>();
-        return layout == null || layout.AllowsRawPlacement(new Bounds(point, new Vector3(width, .06f, width)));
     }
 
     public void UpdateHeld(Camera camera, bool birdMode = false)

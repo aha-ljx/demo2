@@ -65,7 +65,7 @@ public partial class PlacementSystem
             {
                 var item = staged[i]; int kind = plan.devices[i].kind;
                 if (!CanPlaceHere(item, item))
-                { error = "方案摆放存在冲突，请检查角色位置、设备占地和滑槽连接；未载入任何设备"; return false; }
+                { error = "方案无法摆放：" + placementBlockReason + "；未载入任何设备"; return false; }
                 if (kind == 3)
                 {
                     if (!production.FindRail(item, null, out var rail))
@@ -87,6 +87,7 @@ public partial class PlacementSystem
                         if (phase != 4) production.Statistics.RestoreName(staged[i], plan.devices[i].name);
                     }
             production.Rebuild(); RefreshCostDisplay(); Physics.SyncTransforms();
+            LiftPlayerAboveEquipment();
             committed = true; error = null; return true;
         }
         catch (Exception e) when (e is ArgumentException || e is InvalidOperationException || e is NullReferenceException)

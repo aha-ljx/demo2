@@ -322,6 +322,8 @@ public partial class PlacementSystem : MonoBehaviour
             canPlace = hasTarget && CanPlaceHere(groundPreview, null);
             if (selected == 3 && hasTarget)
                 production.Message(canPlace ? "左键放置机械臂" : placementBlockReason);
+            else if (selected == 0 && hasTarget)
+                production.Message(canPlace ? "左键放置冲床" : placementBlockReason);
             previewMaterial.color = canPlace
                 ? new Color(0.1f, 1f, 0.2f, 0.4f)
                 : new Color(1f, 0.15f, 0.15f, 0.4f);
@@ -473,8 +475,15 @@ public partial class PlacementSystem : MonoBehaviour
                 AlignVisualToGround(pressedItem, point + dragOffset);
 
                 if (!CanPlaceHere(pressedItem, pressedItem))
+                {
                     pressedItem.transform.position = oldPosition;
-                else production.Rebuild();
+                    production.Message(placementBlockReason);
+                }
+                else
+                {
+                    production.Rebuild();
+                    LiftPlayerAboveEquipment();
+                }
             }
         }
 
@@ -572,11 +581,13 @@ public partial class PlacementSystem : MonoBehaviour
         {
             item.transform.SetPositionAndRotation(oldPosition, oldRotation);
             rotateBlockedUntil = Time.unscaledTime + 1.5f;
+            production.Message(placementBlockReason);
         }
         else
         {
             rotateBlockedUntil = 0f;
             production.Rebuild();
+            LiftPlayerAboveEquipment();
         }
     }
 
@@ -706,9 +717,15 @@ public partial class PlacementSystem : MonoBehaviour
 
     private bool CanPlaceHere(GameObject candidateObject, GameObject ignoredItem)
     {
-        placementBlockReason = "此处不能放置机械臂";
+        placementBlockReason = "此处无法摆放设备";
         int kind = selected;
         if (ignoredItem != null && placedTypes.TryGetValue(ignoredItem, out int placedKind)) kind = placedKind;
+        if (kind == 0)
+        {
+            var layout = GetComponent<FactoryLevelLayout>();
+            if (layout != null && !layout.AllowsPunchPlacement(candidateObject.GetComponent<EquipmentGrid>().Footprint))
+                return RejectPlacement("无法摆放：冲床不能越过黄线，请放在远离最终产物区的一侧");
+        }
         if (kind == 3 && !production.FindRail(candidateObject, ignoredItem, out _))
             return RejectPlacement(production.FindRailAt(FactoryArm.BaseCenter(candidateObject.transform), ignoredItem, out _, true)
                 ? "这条连通滑槽已有机械臂，请选择独立滑槽" : "请将机械臂底座放在滑槽上");
@@ -718,8 +735,6 @@ public partial class PlacementSystem : MonoBehaviour
         candidate = new Bounds(new Vector3(candidate.center.x, visual.center.y, candidate.center.z),
             new Vector3(candidate.size.x - 0.002f, visual.size.y, candidate.size.z - 0.002f));
 
-        if (candidate.Intersects(playerCollider.bounds))
-            return RejectPlacement("此处与角色重叠，请选择滑槽上的空位");
         if (rawSupply != null && rawSupply.Overlaps(candidate)) return RejectPlacement("此处已有原料板，请选择滑槽上的空位");
         if (production.FinishedArea != null)
         {
@@ -759,6 +774,8 @@ public partial class PlacementSystem : MonoBehaviour
 
     private void PlaceItem()
     {
+        if (!CanPlaceHere(groundPreview, null))
+        { production.Message(placementBlockReason); return; }
         GameObject item = CreateEquipment(selected);
         item.transform.SetPositionAndRotation(groundPreview.transform.position,
             groundPreview.transform.rotation);
@@ -767,6 +784,42 @@ public partial class PlacementSystem : MonoBehaviour
         placedTypes[item] = selected;
         production.Register(item, selected);
         RefreshCostDisplay();
+        LiftPlayerAboveEquipment();
+    }
+
+    private void LiftPlayerAboveEquipment()
+    {
+        if (playerCollider == null || !playerCollider.enabled) return;
+        Physics.SyncTransforms();
+        Bounds body = playerCollider.bounds;
+        bool overlapping = false;
+        float top = body.min.y;
+        // Use solid collider bounds conservatively, including overhangs above the
+        // character, so lifting out of one part cannot embed it in another part.
+        foreach (var item in placed)
+        {
+            if (item == null) continue;
+            foreach (var solid in item.GetComponentsInChildren<Collider>())
+            {
+                if (!solid.enabled || solid.isTrigger) continue;
+                Bounds bounds = solid.bounds;
+                if (!FootprintsOverlap(body, bounds) || bounds.max.y <= body.min.y + .001f) continue;
+                if (bounds.min.y < body.max.y - .001f) overlapping = true;
+                top = Mathf.Max(top, bounds.max.y);
+            }
+        }
+        if (!overlapping) return;
+        float clearance = Mathf.Max(.05f, playerCollider.skinWidth + .02f);
+        // A collision sweep starting inside newly placed hardware can get stuck.
+        // Relocate the controller vertically, then restore normal solid movement.
+        playerCollider.enabled = false;
+        try
+        {
+            playerCollider.transform.position += Vector3.up * (top + clearance - body.min.y);
+        }
+        finally { playerCollider.enabled = true; }
+        if (cameraController != null) cameraController.ResetVerticalSpeed();
+        Physics.SyncTransforms();
     }
 
     private void TakeBackNearest()

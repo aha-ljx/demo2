@@ -23,7 +23,7 @@ public sealed class FactoryProduction : MonoBehaviour
     [Min(0.1f)] public float armTravelMultiplier = 3f;
     [Min(0.1f)] public float armPickupMultiplier = 3f;
     [Min(0.1f)] public float armRotationMultiplier = 2f;
-    public string Hint { get; private set; } = "原料堆固定在边界线外：靠近按 F 或鸟瞰点击拾取";
+    public string Hint { get; private set; } = "冲床须放在黄线远离最终产物区的一侧；原料堆靠近按 F 或鸟瞰点击拾取";
     float nextDispatch;
     void Awake()
     {

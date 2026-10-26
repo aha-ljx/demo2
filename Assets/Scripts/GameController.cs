@@ -46,6 +46,8 @@ public class GameController : MonoBehaviour
 
     public bool IsBirdMode => birdMode;
 
+    public void ResetVerticalSpeed() => verticalSpeed = 0f;
+
     private void Start()
     {
         sceneCamera = GetComponent<Camera>();

@@ -53,7 +53,7 @@ public partial class PlacementSystem
             Bounds footprint = railProbe.GetComponent<EquipmentGrid>().Footprint;
             Bounds full = EquipmentGrid.VisualBounds(railProbe);
             Vector3 center = Point(cell); center.y = owner.production.FinishedArea.Footprint.center.y;
-            value = owner.production.FinishedArea.Footprint.Contains(center) || owner.rawSupply.Overlaps(full) || full.Intersects(owner.playerCollider.bounds);
+            value = owner.production.FinishedArea.Footprint.Contains(center) || owner.rawSupply.Overlaps(full);
             foreach (var machine in machines) if (!value && FactoryProduction.HardwareOverlap(railProbe, machine)) value = true;
             blocked[cell] = value; return value;
         }

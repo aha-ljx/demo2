@@ -24,6 +24,59 @@ public sealed class FactoryPlanAuditRunner : MonoBehaviour
     { if (type == LogType.Error || type == LogType.Exception) { failed = true; report.AppendLine(message + "\n" + stack); } }
     void Update() { if (!done && (failed || Time.realtimeSinceStartup - began > 240)) Finish(false); }
     void Check(bool ok, string message) { if (!ok) throw new Exception(message); report.AppendLine("PASS " + message); }
+    void VerifyPunchBoundary(PlacementSystem builder)
+    {
+        var layout = builder.GetComponent<FactoryLevelLayout>();
+        var supply = FindObjectOfType<RawMaterialSupply>();
+        var selectedField = typeof(PlacementSystem).GetField("selected", Private);
+        var check = typeof(PlacementSystem).GetMethod("CanPlaceHere", Private);
+        var create = typeof(PlacementSystem).GetMethod("CreateEquipment", Private);
+        var types = (Dictionary<GameObject, int>)typeof(PlacementSystem).GetField("placedTypes", Private).GetValue(builder);
+        int previous = (int)selectedField.GetValue(builder);
+        try
+        {
+            foreach (int kind in new[] { 0, 1, 2, 4 })
+            {
+                var probe = (GameObject)create.Invoke(builder, new object[] { kind });
+                try
+                {
+                    selectedField.SetValue(builder, kind);
+                    var grid = probe.GetComponent<EquipmentGrid>();
+                    for (int yaw = 0; yaw < 360; yaw += 90)
+                    {
+                        probe.transform.rotation = Quaternion.Euler(0, yaw, 0);
+                        grid.Snap(new Vector3(layout.BoundaryX - 40, 0, supply.transform.position.z - 120));
+                        Check((bool)check.Invoke(builder, new object[] { probe, null }), "far-side placement allowed for kind " + kind + ", yaw " + yaw);
+                        float edge = layout.BoundaryX - FactoryLevelLayout.BoundaryWidth * .5f;
+                        probe.transform.position += Vector3.right * (edge - grid.Footprint.max.x + .01f);
+                        Check((bool)check.Invoke(builder, new object[] { probe, null }) == (kind != 0),
+                            "whole punch footprint rejects a 1cm crossing beyond visible line ends; kind " + kind + ", yaw " + yaw);
+                        if (kind == 0)
+                        {
+                            string reason = (string)typeof(PlacementSystem).GetField("placementBlockReason", Private).GetValue(builder);
+                            Check(reason.Contains("无法摆放") && reason.Contains("黄线"), "crossing explains why the punch cannot be placed");
+                            types.Add(probe, 0); selectedField.SetValue(builder, 2);
+                            Check(!(bool)check.Invoke(builder, new object[] { probe, probe }), "moving/rotating an existing punch uses its own kind");
+                            types.Remove(probe); selectedField.SetValue(builder, 0);
+                        }
+                        probe.transform.position += Vector3.right * 80;
+                        Check((bool)check.Invoke(builder, new object[] { probe, null }) == (kind != 0), "finished-area-side placement checked for kind " + kind);
+                    }
+                    if (kind == 0)
+                    {
+                        var plan = new FactorySavedPlan { name = "越线方案验证", equipmentScale = builder.AssistantScale,
+                            devices = new[] { new FactoryPlanDevice { kind = 0, name = "冲床9", rotation = probe.transform.rotation,
+                                offset = probe.transform.position - supply.transform.position } } };
+                        Check(!builder.TryLoadPlan(plan, out string error) && error.Contains("黄线") && builder.PlacedCount == 0 &&
+                            builder.CurrentCost == 0 && FactoryProduction.Instance.Stations.Count == 0 && FactoryProduction.Instance.Statistics.Modules.Count == 0,
+                            "saved plan with a forbidden punch is rejected without partial geometry or cost");
+                    }
+                }
+                finally { types.Remove(probe); probe.SetActive(false); Destroy(probe); }
+            }
+        }
+        finally { selectedField.SetValue(builder, previous); }
+    }
     GameObject Place(PlacementSystem builder, int kind, Vector3 position, float yaw = 0)
     {
         typeof(PlacementSystem).GetMethod("SelectItem", Private).Invoke(builder, new object[] { kind });
@@ -35,10 +88,20 @@ public sealed class FactoryPlanAuditRunner : MonoBehaviour
             Check(factory.FindRailAt(position, null, out var rail), "arm fixture has a supporting empty rail");
             FactoryArm.AlignToRail(preview.transform, rail, position);
         }
+        // Reproduce placing directly over the character, including low rails.
+        var body = builder.playerCollider;
+        Bounds footprint = preview.GetComponent<EquipmentGrid>().Footprint;
+        body.enabled = false;
+        body.transform.position = footprint.center + Vector3.up * (body.height * .5f - body.center.y);
+        body.enabled = true; Physics.SyncTransforms();
+        Vector3 before = body.transform.position;
         Check((bool)typeof(PlacementSystem).GetMethod("CanPlaceHere", Private).Invoke(builder, new object[] { preview, null }),
             "saved-layout fixture uses a legal placement for kind " + kind);
         var placed = (List<GameObject>)typeof(PlacementSystem).GetField("placed", Private).GetValue(builder);
         typeof(PlacementSystem).GetMethod("PlaceItem", Private).Invoke(builder, null);
+        Check(body.transform.position.y > before.y && Mathf.Abs(body.transform.position.x - before.x) < .001f &&
+            Mathf.Abs(body.transform.position.z - before.z) < .001f && body.enabled && body.detectCollisions,
+            "placing kind " + kind + " over the player lifts it vertically and keeps collision enabled");
         var item = placed.Last(); typeof(PlacementSystem).GetMethod("CancelSelection", Private).Invoke(builder, null); return item;
     }
     IEnumerator Start()
@@ -50,6 +113,7 @@ public sealed class FactoryPlanAuditRunner : MonoBehaviour
         FindObjectOfType<FactoryTutorial>().Close(); yield return null; yield return null; yield return null;
         var builder = FindObjectOfType<PlacementSystem>(); builder.enabled = false; builder.worldCamera.GetComponent<GameController>().enabled = false;
         var level = FactoryLevelSession.Active; var factory = FactoryProduction.Instance; var supply = FindObjectOfType<RawMaterialSupply>();
+        VerifyPunchBoundary(builder);
         builder.Plans.OpenList();
         Check(builder.Plans.IsListOpen && FactoryPlanLibrary.BlocksGameplay, "planning offers a modal local plan library even before any plans exist");
         level.BeginProduction(); Check(!level.IsRunning, "plan library blocks starting production through its overlay");
@@ -114,9 +178,20 @@ public sealed class FactoryPlanAuditRunner : MonoBehaviour
         var collision = JsonUtility.FromJson<FactorySavedPlan>(JsonUtility.ToJson(plan));
         var duplicate = JsonUtility.FromJson<FactoryPlanDevice>(JsonUtility.ToJson(collision.devices.First(d => d.kind == 0)));
         duplicate.name = "冲床999"; collision.devices = collision.devices.Concat(new[] { duplicate }).ToArray();
+        var playerBody = builder.playerCollider;
+        var planProbe = (GameObject)typeof(PlacementSystem).GetMethod("CreateEquipment", Private).Invoke(builder, new object[] { duplicate.kind });
+        planProbe.transform.SetPositionAndRotation(supply.transform.position + duplicate.offset, duplicate.rotation);
+        Vector3 planCenter = planProbe.GetComponent<EquipmentGrid>().Footprint.center;
+        planProbe.SetActive(false); Destroy(planProbe);
+        playerBody.enabled = false;
+        playerBody.transform.position = planCenter + Vector3.up *
+            (playerBody.height * .5f - playerBody.center.y);
+        playerBody.enabled = true; Physics.SyncTransforms();
+        Vector3 beforePlan = playerBody.transform.position;
         Check(!builder.TryLoadPlan(collision, out _) && builder.PlacedCount == 0 && builder.CurrentCost == 0 && factory.Stations.Count == 0 &&
             factory.Rails.Count == 0 && factory.Arms.Count == 0 && factory.Statistics.Modules.Count == 0 && supply.Remaining == 10,
             "overlapping saved geometry is rejected atomically without partial equipment, cost or statistics");
+        Check(playerBody.transform.position == beforePlan, "rejected plans do not lift the player");
         var incompatible = JsonUtility.FromJson<FactorySavedPlan>(JsonUtility.ToJson(plan)); incompatible.version = 999;
         Check(!builder.TryLoadPlan(incompatible, out _) && builder.PlacedCount == 0, "unsupported save versions leave the blank scene unchanged");
         yield return null; yield return null;
@@ -152,6 +227,9 @@ public sealed class FactoryPlanAuditRunner : MonoBehaviour
         }
         Check(clicked && !builder.Plans.IsListOpen && builder.PlacedCount == 6 && builder.CurrentCost == plan.cost,
             "clicking the saved plan restores the full layout and recalculates its equipment cost");
+        Check(playerBody.transform.position.y > beforePlan.y && Mathf.Abs(playerBody.transform.position.x - beforePlan.x) < .001f &&
+            Mathf.Abs(playerBody.transform.position.z - beforePlan.z) < .001f && playerBody.enabled && playerBody.detectCollisions,
+            "loading a valid plan over the player lifts it vertically after the full plan commits");
         Check(factory.Stations.Count == 3 && factory.Rails.Count == 2 && factory.Arms.Count == 1 && factory.Graph.Same(factory.Rails[0], factory.Rails[1]),
             "restore builds rails before arms and reconstructs rail connectivity");
         var restored = (List<GameObject>)typeof(PlacementSystem).GetField("placed", Private).GetValue(builder);

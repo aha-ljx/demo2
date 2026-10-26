@@ -39,7 +39,7 @@ public sealed class FactoryLevelLayout : MonoBehaviour
         float destinationX = Mathf.Ceil(rowEnd + EndClearance + FinishedGoodsArea.SideLength(scale) * .5f - .5f) + .5f;
         production.CreateFinishedArea(new Vector3(destinationX, 0, source.z), scale);
 
-        var boundaryRoot = new GameObject("原料区与产线布置边界", typeof(FactoryVisual));
+        var boundaryRoot = new GameObject("冲床摆放边界", typeof(FactoryVisual));
         boundaryRoot.transform.SetParent(transform, false);
         Boundary = boundaryRoot.AddComponent<LineRenderer>();
         Boundary.useWorldSpace = true; Boundary.positionCount = 2;
@@ -49,16 +49,23 @@ public sealed class FactoryLevelLayout : MonoBehaviour
         boundaryMaterial = new Material(Shader.Find("Sprites/Default")) { color = FactoryGuideUI.Mint };
         Boundary.sharedMaterial = boundaryMaterial;
         Boundary.shadowCastingMode = ShadowCastingMode.Off; Boundary.receiveShadows = false;
-        var label = new GameObject("原料区边界提示", typeof(FactoryVisual), typeof(FactoryPortLabel)).AddComponent<TextMeshPro>();
+        var label = new GameObject("冲床边界提示", typeof(FactoryVisual), typeof(FactoryPortLabel)).AddComponent<TextMeshPro>();
         label.transform.SetParent(boundaryRoot.transform, false);
         label.transform.position = new Vector3(BoundaryX, 1.2f, source.z - depth * .5f - EndClearance - 1.5f);
         label.font = FactoryFonts.Ensure(TMP_Settings.defaultFontAsset); label.fontSize = 3;
         label.color = FactoryGuideUI.Ink; label.alignment = TextAlignmentOptions.Center;
-        label.rectTransform.sizeDelta = new Vector2(12, 2.5f);
-        label.text = "原料边界";
+        label.rectTransform.sizeDelta = new Vector2(18, 3.5f);
+        label.text = "冲床摆放边界\n冲床须位于远离最终产物区的一侧";
     }
-    // Check the entire footprint against the source-side edge, including beyond the line ends.
-    public bool AllowsRawPlacement(Bounds footprint) => footprint.max.x <= BoundaryX - BoundaryWidth * .5f;
+    // The whole punch footprint must stay beyond the far edge of the line,
+    // including past its visible ends. Determine the side from actual storage.
+    public bool AllowsPunchPlacement(Bounds footprint)
+    {
+        var finished = GetComponent<FactoryProduction>()?.FinishedArea;
+        return finished == null || finished.Footprint.center.x >= BoundaryX
+            ? footprint.max.x <= BoundaryX - BoundaryWidth * .5f
+            : footprint.min.x >= BoundaryX + BoundaryWidth * .5f;
+    }
 
     void OnDestroy() { if (boundaryMaterial != null) Destroy(boundaryMaterial); }
 }

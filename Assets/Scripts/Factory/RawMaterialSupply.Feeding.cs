@@ -70,8 +70,6 @@ public sealed partial class RawMaterialSupply
         if (BlocksGameplay || Held != null || feedOverlay == null ||
             FactoryTutorial.BlocksGameplay || FactoryLevelSession.BlocksInput ||
             station == null || station.Kind != 0) return false;
-        if (!AllowsPlacement(station.Ports.InputPort.position))
-        { production.Message("原料不能越过黄线；请将冲床进料口放在原料堆所在一侧，并留足板材空间"); return false; }
         feedTarget = station;
         feedTitle.text = station.name + " · 上料";
         feedCursor = Cursor.lockState; feedCursorVisible = Cursor.visible;
@@ -109,7 +107,7 @@ public sealed partial class RawMaterialSupply
     public int ConfirmFeed()
     {
         if (!IsFeedDialogOpen || FactoryLevelSession.BlocksInput || FactoryTutorial.BlocksGameplay) return 0;
-        if (feedTarget == null || !AllowsPlacement(feedTarget.Ports.InputPort.position))
+        if (feedTarget == null)
         { CloseFeedDialog(); production.Message("冲床位置已改变，请重新选择上料目标"); return 0; }
         int count = Mathf.Clamp(Mathf.RoundToInt(FeedSlider.value), 0, FeedLimit(feedTarget));
         for (int i = 0; i < count; i++)
