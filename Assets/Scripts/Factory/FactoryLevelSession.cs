@@ -111,7 +111,7 @@ public sealed class FactoryLevelSession : MonoBehaviour
         if (IsRunning || IsEnded || FactoryTutorial.BlocksGameplay || RawMaterialSupply.BlocksGameplay || FactoryStatistics.BlocksGameplay || FactoryPlanLibrary.BlocksGameplay || FactoryLocalAssistant.BlocksGameplay) return;
         IsRunning = true; blockThroughFrame = Time.frameCount + 1;
         // The click that starts the clock must not also place a model in the world.
-        factory.Message("生产已开始：10分钟内尽量多入库，同产量比较净收益；生产期间不能撤回设备");
+        factory.Message("生产已开始：10件全部入库即结算，最迟10分钟结束；同产量比较净收益，生产期间不能撤回设备");
         Refresh();
     }
 
@@ -133,13 +133,15 @@ public sealed class FactoryLevelSession : MonoBehaviour
     {
         if (!IsRunning || simulationSeconds <= 0) return;
         RemainingSeconds = Mathf.Max(0, RemainingSeconds - simulationSeconds);
-        if (RemainingSeconds <= 0) Finish();
+        if (factory.Stored >= RawCount || RemainingSeconds <= 0) Finish();
     }
     internal void SimulationAdvance(long tick)
     {
         if (!IsRunning) return;
         RemainingSeconds = Mathf.Max(0, Duration - (float)(tick / 60d));
-        if (RemainingSeconds <= 0) Finish();
+        // Arrivals and product statistics are committed before this tick ends.
+        // Settle on the final receipt even if a carrier is still returning home.
+        if (factory.Stored >= RawCount || RemainingSeconds <= 0) Finish();
     }
 
     void Finish()

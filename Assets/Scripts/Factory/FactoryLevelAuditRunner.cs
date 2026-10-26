@@ -164,7 +164,9 @@ public sealed class FactoryLevelAuditRunner : MonoBehaviour
         for (int i = 0; i < 5; i++) yield return null;
         playback.CycleSpeed();
         Check(level.RemainingSeconds == remaining && Time.timeScale == 0, "tutorial pauses both countdown and production and cannot be overridden by fast-forward");
-        tutorial.Close(); yield return null; yield return null; yield return null;
+        tutorial.Close();
+        float resumeDeadline = Time.realtimeSinceStartup + 5;
+        while (level.RemainingSeconds == remaining && Time.realtimeSinceStartup < resumeDeadline) yield return null;
         Check(Time.timeScale == 4 && level.RemainingSeconds < remaining, "closing the tutorial restores the prior simulation speed and clock");
         Fill(factory.FinishedArea, 6);
         Check(statistics.ProductCount == 6 && statistics.ProductRate > 0, "final-area receipts update the product throughput statistics exactly once per product");
@@ -201,6 +203,27 @@ public sealed class FactoryLevelAuditRunner : MonoBehaviour
         level = FactoryLevelSession.Active; supply = FindObjectOfType<RawMaterialSupply>(); builder = FindObjectOfType<PlacementSystem>();
         Check(level != null && !level.IsRunning && !level.IsEnded && level.RemainingSeconds == 600 && supply.Remaining == 10 && builder.CurrentCost == 0,
             "retry restores a fresh planning phase, ten plates, zero cost and full time");
+        foreach (bool fixedStep in new[] { false, true })
+        {
+            builder.enabled = false; builder.worldCamera.GetComponent<GameController>().enabled = false;
+            factory = FactoryProduction.Instance;
+            level.BeginProduction(); Fill(factory.FinishedArea, 9);
+            if (fixedStep) level.SimulationAdvance(120 * 60); else level.Advance(120);
+            Check(level.IsRunning && !level.IsEnded && level.RemainingSeconds == 480,
+                "nine receipts keep the run active with unfinished work; fixed step=" + fixedStep);
+            Fill(factory.FinishedArea, 1);
+            if (fixedStep) level.SimulationAdvance(120 * 60 + 1); else level.Advance(FactorySimulation.Step);
+            Check(level.IsEnded && !level.IsRunning && level.RemainingSeconds > 479 && Time.timeScale == 0 &&
+                level.ResultCount == 10 && level.ResultRevenue == 20000 && level.ResultNet == 20000,
+                "tenth receipt settles immediately before the deadline with correct totals; fixed step=" + fixedStep);
+            var earlyResults = level.Results;
+            float earlyRemaining = level.RemainingSeconds;
+            level.Advance(600); level.SimulationAdvance(36000);
+            Check(level.Results == earlyResults && level.RemainingSeconds == earlyRemaining && level.ResultCount == 10,
+                "early settlement is frozen and cannot be repeated; fixed step=" + fixedStep);
+            level.Retry(); yield return null; yield return null; yield return null;
+            level = FactoryLevelSession.Active; builder = FindObjectOfType<PlacementSystem>();
+        }
         builder.enabled = false; builder.worldCamera.GetComponent<GameController>().enabled = false;
         level.BeginProduction(); Fill(FactoryProduction.Instance.FinishedArea, 4); level.Advance(600);
         Check(level.ResultGrade == "生产完成" && level.ResultNet == 8000, "four products settle at 2000 each without an obsolete pass threshold");
