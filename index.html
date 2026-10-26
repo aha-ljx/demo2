@@ -59,9 +59,9 @@
       var buildUrl = "Build";
       var loaderUrl = buildUrl + "/b23dd96997961653e2825455633aac82.loader.js";
       var config = {
-        dataUrl: buildUrl + "/ab1832051ad6ac5b5370c3e31732cb0e.data.unityweb",
+        dataUrl: buildUrl + "/626bad3258344cb377ed57f651e16d67.data.unityweb",
         frameworkUrl: buildUrl + "/c1b4fb6a2344c28114faf78bee87c58d.framework.js.unityweb",
-        codeUrl: buildUrl + "/f76338439aab839492e581596703f58b.wasm.unityweb",
+        codeUrl: buildUrl + "/65e0c60351bd2d867ede6889bfe91a85.wasm.unityweb",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "DefaultCompany",
         productName: "Demo2",
@@ -113,7 +113,7 @@
       script.src = loaderUrl;
       script.onload = async () => {
         try {
-          const chunks = ["Build/ab1832051ad6ac5b5370c3e31732cb0e.data.unityweb.part000", "Build/ab1832051ad6ac5b5370c3e31732cb0e.data.unityweb.part001", "Build/ab1832051ad6ac5b5370c3e31732cb0e.data.unityweb.part002", "Build/ab1832051ad6ac5b5370c3e31732cb0e.data.unityweb.part003", "Build/ab1832051ad6ac5b5370c3e31732cb0e.data.unityweb.part004", "Build/ab1832051ad6ac5b5370c3e31732cb0e.data.unityweb.part005", "Build/ab1832051ad6ac5b5370c3e31732cb0e.data.unityweb.part006", "Build/ab1832051ad6ac5b5370c3e31732cb0e.data.unityweb.part007", "Build/ab1832051ad6ac5b5370c3e31732cb0e.data.unityweb.part008", "Build/ab1832051ad6ac5b5370c3e31732cb0e.data.unityweb.part009", "Build/ab1832051ad6ac5b5370c3e31732cb0e.data.unityweb.part010"];
+          const chunks = ["Build/626bad3258344cb377ed57f651e16d67.data.unityweb.part000", "Build/626bad3258344cb377ed57f651e16d67.data.unityweb.part001", "Build/626bad3258344cb377ed57f651e16d67.data.unityweb.part002", "Build/626bad3258344cb377ed57f651e16d67.data.unityweb.part003", "Build/626bad3258344cb377ed57f651e16d67.data.unityweb.part004", "Build/626bad3258344cb377ed57f651e16d67.data.unityweb.part005", "Build/626bad3258344cb377ed57f651e16d67.data.unityweb.part006", "Build/626bad3258344cb377ed57f651e16d67.data.unityweb.part007", "Build/626bad3258344cb377ed57f651e16d67.data.unityweb.part008", "Build/626bad3258344cb377ed57f651e16d67.data.unityweb.part009", "Build/626bad3258344cb377ed57f651e16d67.data.unityweb.part010"];
           const buffers = [];
           for (let i = 0; i < chunks.length; i++) {
             const response = await fetch(chunks[i]);

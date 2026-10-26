@@ -1,0 +1,34 @@
+{
+  "source_commit": "404fe922e52538ad336bf1f0d77c3fcf769e8a0b",
+  "feature": "settle-on-ten-stored-products",
+  "data_sha256": "8cab10bf9e3b47e405f2a094a097fa005d96878ae83a4d33fc8f80f8910eb313",
+  "chunks": [
+    "Build/626bad3258344cb377ed57f651e16d67.data.unityweb.part000",
+    "Build/626bad3258344cb377ed57f651e16d67.data.unityweb.part001",
+    "Build/626bad3258344cb377ed57f651e16d67.data.unityweb.part002",
+    "Build/626bad3258344cb377ed57f651e16d67.data.unityweb.part003",
+    "Build/626bad3258344cb377ed57f651e16d67.data.unityweb.part004",
+    "Build/626bad3258344cb377ed57f651e16d67.data.unityweb.part005",
+    "Build/626bad3258344cb377ed57f651e16d67.data.unityweb.part006",
+    "Build/626bad3258344cb377ed57f651e16d67.data.unityweb.part007",
+    "Build/626bad3258344cb377ed57f651e16d67.data.unityweb.part008",
+    "Build/626bad3258344cb377ed57f651e16d67.data.unityweb.part009",
+    "Build/626bad3258344cb377ed57f651e16d67.data.unityweb.part010"
+  ],
+  "runtime_files": {
+    "626bad3258344cb377ed57f651e16d67.data.unityweb.part000": "7f2a1f7464104028a9127a402a6b729a49ae045a65cf78e8451dbd3c1635aad3",
+    "626bad3258344cb377ed57f651e16d67.data.unityweb.part001": "6a5aaebb62b303ff4c9a2f50e751061840655713f1aada0694794742a105b335",
+    "626bad3258344cb377ed57f651e16d67.data.unityweb.part002": "3f967f3441f1323e59e72bce790a1dc3e0311a1541d64b8d978a00cbe73d5e10",
+    "626bad3258344cb377ed57f651e16d67.data.unityweb.part003": "45a33e5a799e6708a3852e000922ac6910cef88f7db14df4644b9bf15e06a6cc",
+    "626bad3258344cb377ed57f651e16d67.data.unityweb.part004": "122d0bc6f6e9971122f351b62ce45d170e8b503f5c68b1786f228a26747118d3",
+    "626bad3258344cb377ed57f651e16d67.data.unityweb.part005": "8f485ec70b051818ea4028ee79b6a1c39c10f8a6db3b4ee38608289bf7c43aa5",
+    "626bad3258344cb377ed57f651e16d67.data.unityweb.part006": "1f9b64ec93af5d7d76f8ab787249e7db2a8f3778bafd4e1e15cf10847403e7a8",
+    "626bad3258344cb377ed57f651e16d67.data.unityweb.part007": "d4070b37bf3a49c938a32f113a81e8d2e23999dd298265f5b59f3813cc4080ec",
+    "626bad3258344cb377ed57f651e16d67.data.unityweb.part008": "3c21b741afd5b09ab75aad1402c5759150a59c4a770321bcf11d4c19acd9fd80",
+    "626bad3258344cb377ed57f651e16d67.data.unityweb.part009": "bba41231dbe7efc30692c114fb81a59c40b854a56eb410299bbf41ec5dcaf8e0",
+    "626bad3258344cb377ed57f651e16d67.data.unityweb.part010": "279374c651fa2ebd62757d1cdd006082b00710123514f6a4ef98562a11378806",
+    "65e0c60351bd2d867ede6889bfe91a85.wasm.unityweb": "1dd40d4298d2311cf165c99b85786a608c8f657950514627e22609f82cde890d",
+    "b23dd96997961653e2825455633aac82.loader.js": "d7a3ee7acf704a81c53418d29e8d58d9b34f9674e01c1bdb44bcbdf6406d7bfa",
+    "c1b4fb6a2344c28114faf78bee87c58d.framework.js.unityweb": "7841150b749337146c67642dd906e3a58d8781172ba96b16c117f47b1eeac7ad"
+  }
+}
