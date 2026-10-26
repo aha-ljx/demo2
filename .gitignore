@@ -1,0 +1,54 @@
+# Unity generated directories
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# Local validation project and version control metadata
+/.animation-tools/ghost-validation/
+/.plastic/
+
+# IDE generated files
+.vs/
+.vscode/
+.idea/
+.gradle/
+ExportedObj/
+.consulo/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+
+# Generated reports and build products
+/UpgradeLog.htm
+sysinfo.txt
+crashlytics-build.properties
+*.apk
+*.aab
+*.app
+*.unitypackage
+~UnityDirMonSyncFile~*
+
+# OS metadata
+.DS_Store*
+Thumbs.db
+Desktop.ini
